@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Build a standalone AppleScript app using macOS's own compiler."""
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess
+
+ROOT = Path(__file__).resolve().parent.parent
+APP = ROOT / "dist" / "Stay Awake.app"
+
+
+def timer_plist():
+    return plistlib.dumps({
+        "Label": "io.github.stay-awake.timer",
+        "ProgramArguments": ["/bin/sh", "-c", (ROOT / "src/timer.sh").read_text(),
+                             "stay-awake-timer", "__DEADLINE__", "__BOOT__"],
+        "RunAtLoad": True,
+        "StartInterval": 5,
+    }).decode()
+
+
+def controller_source():
+    # Protect the fixed shell script against heredoc expansion, then insert
+    # precisely the two variables we intend the controller to expand.
+    xml = timer_plist().replace("\\", "\\\\").replace("$", "\\$").replace("`", "\\`")
+    xml = xml.replace("__DEADLINE__", "$deadline").replace("__BOOT__", "$boot")
+    return (ROOT / "src/controller.sh").read_text().replace("@@TIMER_PLIST@@", xml)
+
+
+def main():
+    APP.parent.mkdir(exist_ok=True)
+    if APP.exists():
+        shutil.rmtree(APP)
+    subprocess.run(["osacompile", "-o", str(APP), str(ROOT / "src/Stay Awake.applescript")], check=True)
+    resources = APP / "Contents/Resources"
+    (resources / "controller.sh").write_text(controller_source())
+    info_path = APP / "Contents/Info.plist"
+    info = plistlib.loads(info_path.read_bytes())
+    info.update(CFBundleIdentifier="io.github.stay-awake.app",
+                CFBundleName="Stay Awake", CFBundleDisplayName="Stay Awake",
+                CFBundleShortVersionString="1.0.0", CFBundleVersion="1",
+                LSMinimumSystemVersion="12.0",
+                NSHumanReadableCopyright="Copyright 2026 Stay Awake contributors. MIT license.")
+    info_path.write_bytes(plistlib.dumps(info))
+    subprocess.run(["codesign", "--force", "--sign", "-", str(APP)], check=True)
+    print(APP)
+
+
+if __name__ == "__main__":
+    main()

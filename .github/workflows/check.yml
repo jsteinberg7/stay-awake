@@ -1,0 +1,17 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test timer behavior
+        run: python3 -m unittest discover -s tests -v
+      - name: Build app
+        run: python3 scripts/build.py
+      - name: Verify signature
+        run: codesign --verify --deep --strict 'dist/Stay Awake.app'
