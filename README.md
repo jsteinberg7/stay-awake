@@ -27,6 +27,8 @@ cp -R 'dist/Stay Awake.app' ~/Applications/
 
 There are no third-party dependencies, accounts, analytics, or network requests.
 
+The build also creates `dist/Stay-Awake.zip` and checks that it preserves Spotlight search metadata.
+
 ## How it works
 
 The AppleScript app validates the duration and asks macOS for administrator authorization. It enables `pmset -a disablesleep 1` and installs one root-owned LaunchDaemon at:

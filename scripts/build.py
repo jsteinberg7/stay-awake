@@ -4,6 +4,7 @@ from pathlib import Path
 import plistlib
 import shutil
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "dist" / "Stay Awake.app"
@@ -52,6 +53,16 @@ def main():
     for key, value in metadata.items():
         encoded = plistlib.dumps(value, fmt=plistlib.FMT_BINARY).hex()
         subprocess.run(["xattr", "-wx", "com.apple.metadata:" + key, encoded, str(APP)], check=True)
+    # Archive a parent directory so ditto includes the app root's attributes.
+    # Archiving the app itself with --keepParent silently drops those attributes.
+    archive = APP.parent / "Stay-Awake.zip"
+    with tempfile.TemporaryDirectory() as stage, tempfile.TemporaryDirectory() as extracted:
+        subprocess.run(["ditto", "--rsrc", "--extattr", str(APP), stage + "/Stay Awake.app"], check=True)
+        subprocess.run(["ditto", "-c", "-k", "--sequesterRsrc", "--rsrc", "--extattr", stage, str(archive)], check=True)
+        subprocess.run(["ditto", "-x", "-k", str(archive), extracted], check=True)
+        saved = subprocess.check_output(["xattr", "-px", "com.apple.metadata:kMDItemKeywords", extracted + "/Stay Awake.app"])
+        if "caffeinate" not in plistlib.loads(bytes.fromhex(saved.decode())):
+            raise RuntimeError("Release archive lost its Spotlight search metadata")
     print(APP)
 
 
