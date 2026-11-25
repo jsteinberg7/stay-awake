@@ -1,9 +1,9 @@
 # Stay Awake
 
-A tiny Mac app that asks how many hours to keep your laptop running, even with the lid closed.
+A tiny Mac app that asks how long to keep your laptop running, even with the lid closed.
 
 1. Open Spotlight and search **Stay Awake**.
-2. Enter the number of hours. `0.5` means 30 minutes.
+2. Enter a duration: `30m`, `2h`, or `1h 30m`. Full words like `30 minutes` work too. Numbers alone mean minutes.
 3. Approve the macOS administrator prompt.
 
 Normal sleep returns automatically when time is up. Open the app again to change the duration or press **Stop** to end early. Closing the app does not cancel the timer. Restarting the Mac ends the session.

@@ -34,11 +34,12 @@ def main():
     subprocess.run(["osacompile", "-o", str(APP), str(ROOT / "src/Stay Awake.applescript")], check=True)
     resources = APP / "Contents/Resources"
     (resources / "controller.sh").write_text(controller_source())
+    shutil.copyfile(ROOT / "src/duration.awk", resources / "duration.awk")
     info_path = APP / "Contents/Info.plist"
     info = plistlib.loads(info_path.read_bytes())
     info.update(CFBundleIdentifier="io.github.stay-awake.app",
                 CFBundleName="Stay Awake", CFBundleDisplayName="Stay Awake",
-                CFBundleShortVersionString="1.0.0", CFBundleVersion="1",
+                CFBundleShortVersionString="1.0.1", CFBundleVersion="2",
                 LSMinimumSystemVersion="12.0",
                 NSHumanReadableCopyright="Copyright 2026 Stay Awake contributors. MIT license.")
     info_path.write_bytes(plistlib.dumps(info))

@@ -1,19 +1,20 @@
 on run
 	try
+		set requestedDuration to "2h"
 		repeat
-			set answer to display dialog "How many hours should your Mac stay awake?" & return & return & "You can close the lid. Use 0.5 for 30 minutes." default answer "2" buttons {"Cancel", "Stop", "Start"} default button "Start" cancel button "Cancel" with title "Stay Awake"
+			set answer to display dialog "How long should your Mac stay awake?" & return & return & "Try 30m, 2h, or 1h 30m. Numbers alone mean minutes." default answer requestedDuration buttons {"Cancel", "Stop", "Start"} default button "Start" cancel button "Cancel" with title "Stay Awake"
 			if button returned of answer is "Stop" then
 				my runController("stop")
 				display dialog "Normal sleep is back on." buttons {"OK"} default button "OK" with title "Stay Awake"
 				return
 			end if
+			set requestedDuration to text returned of answer
 			try
-				set requestedHours to (text returned of answer) as real
-				if requestedHours < (1 / 60) or requestedHours > 168 then error "Out of range"
-				set durationSeconds to round (requestedHours * 3600)
+				set parserPath to POSIX path of (path to resource "duration.awk")
+				set durationSeconds to (do shell script "/usr/bin/printf '%s' " & quoted form of requestedDuration & " | /usr/bin/awk -f " & quoted form of parserPath) as integer
 				exit repeat
 			on error
-				display dialog "Enter a number from 0.017 to 168 hours." buttons {"OK"} default button "OK" with title "Stay Awake"
+				display dialog "Try 30m, 2h, or 1h 30m. Full words like 30 minutes work too." & return & return & "Choose between 1 minute and 7 days." buttons {"OK"} default button "OK" with title "Stay Awake"
 			end try
 		end repeat
 		my runController("start " & (durationSeconds as integer as text))
