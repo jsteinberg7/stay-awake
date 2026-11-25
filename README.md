@@ -2,7 +2,7 @@
 
 A tiny Mac app that asks how long to keep your laptop running, even with the lid closed.
 
-1. Open Spotlight and search **Stay Awake**.
+1. Open Spotlight and search **Stay Awake** or **caffeinate**.
 2. Enter a duration: `30m`, `2h`, or `1h 30m`. Full words like `30 minutes` work too. Numbers alone mean minutes.
 3. Approve the macOS administrator prompt.
 
