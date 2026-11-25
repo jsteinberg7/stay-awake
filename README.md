@@ -3,7 +3,7 @@
 A tiny Mac app that asks how long to keep your laptop running, even with the lid closed.
 
 1. Open Spotlight and search **Stay Awake** or **caffeinate**.
-2. Enter a duration: `30m`, `2h`, or `1h 30m`. Full words like `30 minutes` work too. Numbers alone mean minutes.
+2. Choose **Hours** and **Minutes** with the native up/down controls, then click **Start**. You can also use the arrow keys or enter numbers directly.
 3. Approve the macOS administrator prompt.
 
 Normal sleep returns automatically when time is up. Open the app again to change the duration or press **Stop** to end early. Closing the app does not cancel the timer. Restarting the Mac ends the session.
@@ -31,7 +31,7 @@ The build also creates `dist/Stay-Awake.zip` and checks that it preserves Spotli
 
 ## How it works
 
-The AppleScript app validates the duration and asks macOS for administrator authorization. It enables `pmset -a disablesleep 1` and installs one root-owned LaunchDaemon at:
+The native Swift/AppKit app validates the duration and asks macOS for administrator authorization. It enables `pmset -a disablesleep 1` and installs one root-owned LaunchDaemon at:
 
 ```
 /Library/LaunchDaemons/io.github.stay-awake.timer.plist
@@ -57,6 +57,9 @@ The last command may report that the service is not found if the timer already f
 
 ```sh
 python3 -m unittest discover -s tests -v
+python3 scripts/build.py --test-ui
 ```
+
+The native UI checks exercise the hour/minute controls, validation, and duration limits without changing power settings. Release builds run on both Apple silicon and Intel Macs.
 
 MIT licensed.

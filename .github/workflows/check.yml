@@ -12,6 +12,6 @@ jobs:
       - name: Test timer behavior
         run: python3 -m unittest discover -s tests -v
       - name: Build app
-        run: python3 scripts/build.py
+        run: python3 scripts/build.py --test-ui
       - name: Verify signature
         run: codesign --verify --deep --strict 'dist/Stay Awake.app'

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build a standalone AppleScript app using macOS's own compiler."""
+"""Build a universal native macOS app using the Swift compiler."""
+import argparse
 from pathlib import Path
 import plistlib
 import shutil
@@ -29,18 +30,31 @@ def controller_source():
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test-ui", action="store_true", help="Exercise native duration controls without changing power settings")
+    args = parser.parse_args()
     APP.parent.mkdir(exist_ok=True)
     if APP.exists():
         shutil.rmtree(APP)
-    subprocess.run(["osacompile", "-o", str(APP), str(ROOT / "src/Stay Awake.applescript")], check=True)
     resources = APP / "Contents/Resources"
+    resources.mkdir(parents=True)
+    binaries = APP / "Contents/MacOS"
+    binaries.mkdir()
+    slices = []
+    for architecture in ("arm64", "x86_64"):
+        binary = APP.parent / ("StayAwake-" + architecture)
+        subprocess.run(["xcrun", "swiftc", "-O", "-target", architecture + "-apple-macos12.0",
+                        "-framework", "AppKit", str(ROOT / "src/main.swift"), "-o", str(binary)], check=True)
+        slices.append(str(binary))
+    subprocess.run(["xcrun", "lipo", "-create", *slices, "-output", str(binaries / "StayAwake")], check=True)
     (resources / "controller.sh").write_text(controller_source())
-    shutil.copyfile(ROOT / "src/duration.awk", resources / "duration.awk")
     info_path = APP / "Contents/Info.plist"
-    info = plistlib.loads(info_path.read_bytes())
-    info.update(CFBundleIdentifier="io.github.stay-awake.app",
+    info = dict(CFBundleIdentifier="io.github.stay-awake.app",
                 CFBundleName="Stay Awake", CFBundleDisplayName="Stay Awake",
-                CFBundleShortVersionString="1.0.2", CFBundleVersion="3",
+                CFBundleExecutable="StayAwake", CFBundlePackageType="APPL",
+                CFBundleShortVersionString="1.1.0", CFBundleVersion="4",
+                NSPrincipalClass="NSApplication", NSHighResolutionCapable=True,
+                LSApplicationCategoryType="public.app-category.utilities",
                 LSMinimumSystemVersion="12.0",
                 NSHumanReadableCopyright="Copyright 2026 Stay Awake contributors. MIT license.")
     info_path.write_bytes(plistlib.dumps(info))
@@ -64,6 +78,12 @@ def main():
         if "caffeinate" not in plistlib.loads(bytes.fromhex(saved.decode())):
             raise RuntimeError("Release archive lost its Spotlight search metadata")
     print(APP)
+    if args.test_ui:
+        test_binary = APP.parent / "DurationControlsSmoke"
+        subprocess.run(["xcrun", "swiftc", "-D", "UI_SMOKE_TEST", "-framework", "AppKit",
+                        str(ROOT / "src/main.swift"), str(ROOT / "tests/DurationControlsSmoke.swift"),
+                        "-o", str(test_binary)], check=True)
+        subprocess.run([str(test_binary)], check=True)
 
 
 if __name__ == "__main__":
